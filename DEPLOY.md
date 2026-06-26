@@ -39,10 +39,15 @@ The push to `main` triggers the workflow. Watch it under the repo's **Actions** 
 | | Compute tier | **Standard — 2 vCPU / 4 GB RAM** (matches the in-memory job store) |
 | | Models to authorize | **Select all four** so MaaS may route to each: `nvidia/NVIDIA-Nemotron-3-Nano-Omni`, `Qwen/Qwen3-Next-80B-A3B-Instruct`, `Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8`, `anthropic/claude-sonnet-4.6` |
 | **3. Networking** | Exposed port | **8080** |
-| **4. Env Variables** | (auto-injected — do NOT set) | `GMI_MAAS_API_KEY`, `GMI_MAAS_BASE_URL`, `GMI_MODELS` are injected by AgentBox |
+| **4. Env Variables** | (LOCKED — managed by GMI, can't override) | `GMI_MAAS_API_KEY` (auto-generated on deploy) · `GMI_MAAS_BASE_URL` = `https://api.gmi-serving.com` |
+| | **Model selection — set as env vars** (the dashboard model picker is optional/flaky; configure routing here instead) | `GMI_MODEL_CLASSIFIER` = `deepseek-ai/DeepSeek-V4-Flash` · `GMI_MODEL_REPORTER` = `zai-org/GLM-5.2-FP8` · `GMI_MODEL_MEDICAID` = `Qwen/Qwen3.6-Max-Preview` · `GMI_MODEL_CASENOTE` = `anthropic/claude-opus-4.8` · `GMI_MODEL_REPORTER_ESCALATION` = `anthropic/claude-opus-4.8` |
 | | `GMI_TIMEOUT_SECONDS` (TEXT) | `6` — fail fast if venue WiFi stalls mid-call |
 | | `GMI_MAX_RETRIES` (TEXT) | `0` — no backoff during the live demo |
-| | `GMI_PRICES` (TEXT, optional) | paste real per-model `$/1M` rates from the GMI console so the cost meter is exact |
+| | `GMI_PRICES` (TEXT, optional) | override per-model `$/1M` rates if they differ from the console |
+
+> **Note on the locked base URL:** AgentBox injects `GMI_MAAS_BASE_URL=https://api.gmi-serving.com` *without* `/v1`. The container normalizes this — it always appends `/v1` so the OpenAI-compatible routes resolve. No action needed; just know the bare host is expected.
+>
+> **Model routing precedence:** `GMI_MODEL_<STEP>` env vars (above) > a single `GMI_MODELS` blob > built-in defaults. All four models share the one MaaS endpoint; the `model` string per request is what selects them — so no dashboard selection is required, just these env rows.
 | **5. Review & Register** | Deployment path | **GMI CE Deployment + MaaS ON** (eligible for the Verified badge) |
 | | Region | **US West** (lowest latency at the venue) |
 

@@ -45,8 +45,19 @@ DEFAULT_BASE_URL = "https://api.gmi-serving.com/v1"
 
 
 def base_url() -> str:
-    """Resolve the MaaS base URL at call time (env may be injected late)."""
-    return os.environ.get("GMI_MAAS_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
+    """Resolve the MaaS base URL at call time (env may be injected late).
+
+    AgentBox injects a LOCKED ``GMI_MAAS_BASE_URL=https://api.gmi-serving.com``
+    *without* the ``/v1`` suffix. GMI's OpenAI-compatible routes live under
+    ``/v1`` (``/v1/chat/completions``), so the OpenAI SDK would 404 if we passed
+    the bare host. Normalise: always end the base URL with ``/v1``.
+    """
+    raw = os.environ.get("GMI_MAAS_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
+    if not raw:
+        raw = DEFAULT_BASE_URL.rstrip("/")
+    if not raw.endswith("/v1"):
+        raw = raw + "/v1"
+    return raw
 
 
 def api_key() -> Optional[str]:
@@ -144,12 +155,28 @@ def _parse_models_override(raw: str) -> dict[str, str]:
 
 def _build_models() -> dict[str, str]:
     merged = dict(_DEFAULT_MODELS)
+
+    # Layer 1: the compact/JSON GMI_MODELS blob.
     override = os.environ.get("GMI_MODELS", "")
     if override:
         parsed = _parse_models_override(override)
         if parsed:
             logger.info("GMI_MODELS override applied for steps: %s", sorted(parsed))
             merged.update(parsed)
+
+    # Layer 2 (highest): one clean env var per step, e.g.
+    #   GMI_MODEL_CLASSIFIER=deepseek-ai/DeepSeek-V4-Flash
+    #   GMI_MODEL_REPORTER=zai-org/GLM-5.2-FP8
+    #   GMI_MODEL_MEDICAID=Qwen/Qwen3.6-Max-Preview
+    #   GMI_MODEL_CASENOTE=anthropic/claude-opus-4.8
+    #   GMI_MODEL_REPORTER_ESCALATION=anthropic/claude-opus-4.8
+    # Easiest to set as separate rows in the AgentBox env wizard.
+    for step in list(merged.keys()) + ["reporter_escalation"]:
+        val = os.environ.get(f"GMI_MODEL_{step.upper()}", "").strip()
+        if val:
+            merged[step] = val
+            logger.info("GMI_MODEL_%s override applied: %s", step.upper(), val)
+
     return {step: _strip_litellm_prefix(mid) for step, mid in merged.items()}
 
 

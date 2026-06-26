@@ -35,7 +35,7 @@ The push to `main` triggers the workflow. Watch it under the repo's **Actions** 
 |---|---|---|
 | **1. Basics & Template** | Internal name | `casescribe` |
 | | Listing title | `CaseScribe — Documentation Co-pilot for School Social Workers` |
-| **2. Infrastructure** | Docker image | `ghcr.io/<your-github-username>/casescribe:latest` (if private: add `GHCR_USER` + a `read:packages` token) |
+| **2. Infrastructure** | Docker image | `ghcr.io/pracharya2601/casescribe:latest` (if private: add `pracharya2601` + a `read:packages` token) |
 | | Compute tier | **Standard — 2 vCPU / 4 GB RAM** (matches the in-memory job store) |
 | | Models to authorize | **Select all four** so MaaS may route to each: `nvidia/NVIDIA-Nemotron-3-Nano-Omni`, `Qwen/Qwen3-Next-80B-A3B-Instruct`, `Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8`, `anthropic/claude-sonnet-4.6` |
 | **3. Networking** | Exposed port | **8080** |
@@ -74,6 +74,17 @@ Run all **three demo scenarios** end-to-end through the deployed instance and **
 - **Tags**: `K-12`, `education`, `social-work`, `healthcare`, `compliance`, `FERPA`, `Medicaid`, `multi-agent`
 
 Submit for review before 4:30; screenshot the pending status for the demo.
+
+## 5. Continuous deployment — what's automatic vs manual
+
+Researched against the GMI docs (2026-06-26): **AgentBox has no auto-pull, no "watch tag", and no supported redeploy API/webhook.** So "push → auto-deploy" is only half-automatable:
+
+- **Automatic (CI):** every push to `main` runs `.github/workflows/docker-publish.yml` → builds amd64 → publishes **`ghcr.io/pracharya2601/casescribe:latest`** *and* an immutable **`ghcr.io/pracharya2601/casescribe:sha-<short>`** (the `type=sha` tag). The registry is always current with `main`.
+- **Manual (deploy):** AgentBox won't pull the new image on its own. After a green Actions run, go to **AgentBox console → your agent → re-register** (the wizard remembers your fields; the **public URL stays stable**). For a guaranteed fresh pull, point the image field at the `sha-<short>` tag rather than `:latest` (avoids any `:latest` cache ambiguity) — this also gives you a clean "new revision" story.
+
+> **Heads-up:** the instance you registered earlier was the *mock-build* image. Re-register after this next push to pick up the **runtime-live** build (real GMI pipeline by default).
+
+**Optional / UNVERIFIED redeploy hack:** there's a generic container `POST https://console.gmicloud.ai/api/v1/containers/{id}/restart` (Bearer JWT). It's *unconfirmed* whether restart re-pulls the image, and AgentBox agents may not be addressable by container id — so do **not** rely on it for the demo or claim auto-redeploy on stage. If you confirm it in-console, you could add a final Actions step calling it with a `GMI_TOKEN` secret + container id.
 
 ## Notes / gotchas
 

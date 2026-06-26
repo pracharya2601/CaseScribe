@@ -1,21 +1,24 @@
 // API client for the AgentBox async job contract (casescribe-platform):
 //   POST /run        -> 202 { job_id }
 //   GET  /jobs/{id}  -> job status object
-// A single flag (VITE_USE_MOCK, default ON) flips between the zero-backend mock
-// poller and the live FastAPI service, so the demo never depends on the WiFi.
+//
+// All paths are SAME-ORIGIN RELATIVE ("/run", "/jobs/{id}", "/edits") so the
+// served UI talks to whatever host it was loaded from — no base-URL config
+// needed behind the AgentBox deploy URL.
+//
+// Mock vs live is a RUNTIME choice (see ./mockMode): default LIVE (real
+// pipeline), flippable at the venue if the WiFi dies. Every call routes through
+// isMock() so toggling takes effect immediately on the next run.
 
 import { getMock, runMock } from "./mock";
+import { isMock } from "./mockMode";
 import type { JobStatus, Stage } from "./types";
-
-/** Mock unless explicitly set to "false" (e.g. VITE_USE_MOCK=false npm run dev). */
-export const IS_MOCK =
-  (import.meta.env.VITE_USE_MOCK ?? "true").toString().toLowerCase() !== "false";
 
 const VALID_STAGES: Stage[] = ["scrubbing", "classifying", "drafting", "done"];
 
 /** Submit a transcript; resolves to the job id. */
 export async function runJob(text: string): Promise<string> {
-  if (IS_MOCK) return runMock(text);
+  if (isMock()) return runMock(text);
   const res = await fetch("/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -28,7 +31,7 @@ export async function runJob(text: string): Promise<string> {
 
 /** Poll one job; normalizes the raw payload into a JobStatus. */
 export async function getJob(jobId: string): Promise<JobStatus> {
-  if (IS_MOCK) return getMock(jobId);
+  if (isMock()) return getMock(jobId);
   const res = await fetch(`/jobs/${jobId}`);
   if (!res.ok) throw new Error(`/jobs/${jobId} failed: ${res.status}`);
   const data = await res.json();
@@ -54,7 +57,7 @@ export interface EditCaptureRecord {
 }
 
 export async function captureEdits(records: EditCaptureRecord[]): Promise<void> {
-  if (IS_MOCK) {
+  if (isMock()) {
     // eslint-disable-next-line no-console
     console.info("[flywheel] edit-capture (mock):", records);
     return;

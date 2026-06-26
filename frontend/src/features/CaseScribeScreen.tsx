@@ -26,6 +26,7 @@ import {
   Textarea,
   CountUp,
   Separator,
+  Tooltip,
   TooltipProvider,
 } from "../ui";
 import {
@@ -50,7 +51,8 @@ import {
   reinject,
   scrubString,
   MOCK_SCENARIOS,
-  IS_MOCK,
+  useMockMode,
+  toggleMock,
   type EditCaptureRecord,
   type Stage,
   type TrinityResult,
@@ -279,6 +281,7 @@ export function CaseScribeScreen() {
   const initForJob = useRef<string | null>(null);
   const composerRef = useRef<HTMLDivElement>(null);
 
+  const isMockMode = useMockMode();
   const job = useJobPoll(jobId);
   const stage: Stage = job?.stage ?? "scrubbing";
   const completed = job?.status === "completed";
@@ -347,6 +350,13 @@ export function CaseScribeScreen() {
       composerRef.current?.querySelector("textarea")?.focus();
     });
   }, []);
+
+  // Flip mock<->live at runtime (persisted to localStorage + URL). Reset any
+  // in-flight job so the next run cleanly hits the newly-selected backend.
+  const handleToggleMode = useCallback(() => {
+    toggleMock();
+    handleNewSession();
+  }, [handleNewSession]);
 
   const handleScenario = useCallback(
     (key: string) => {
@@ -753,7 +763,25 @@ export function CaseScribeScreen() {
         )}
       </div>
       <div className="flex items-center gap-2 self-center">
-        <Pill tone={IS_MOCK ? "info" : "success"}>{IS_MOCK ? "Demo data" : "Live"}</Pill>
+        <Tooltip
+          content={
+            isMockMode
+              ? "Demo = canned data, no backend. Click for Live (real GMI pipeline)."
+              : "Live = real GMI pipeline. Click for Demo (canned data, no backend)."
+          }
+        >
+          <button
+            type="button"
+            onClick={handleToggleMode}
+            aria-pressed={!isMockMode}
+            aria-label={`Mode: ${isMockMode ? "Demo data" : "Live"}. Click to switch.`}
+            className="rounded-full outline-none transition-transform hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-brand/40"
+          >
+            <Pill tone={isMockMode ? "info" : "success"} className="cursor-pointer">
+              {isMockMode ? "Demo data" : "Live"}
+            </Pill>
+          </button>
+        </Tooltip>
         <a
           href="/gallery"
           className="rounded-lg px-2.5 py-1.5 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
@@ -938,7 +966,7 @@ export function CaseScribeScreen() {
           )}
 
           <footer className="pt-1 text-center text-xs text-ink-soft">
-            {IS_MOCK
+            {isMockMode
               ? "Running on demo fixtures · zero backend (SPEC §15)"
               : "Live · AgentBox job pipeline"}{" "}
             · PII scrubbed locally before any model call

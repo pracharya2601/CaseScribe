@@ -15,14 +15,13 @@ Everything needed to get CaseScribe live on GMI AgentBox. Do this **before 4:30*
 
 The workflow at `.github/workflows/docker-publish.yml` builds on GitHub's **native amd64** runners (no QEMU) and pushes to GHCR using the built-in `GITHUB_TOKEN` — **no PAT needed**.
 
-**a. Put the repo on GitHub** (one-time — this dir isn't a GitHub repo yet):
+**a. Put the repo on GitHub.** The local repo is already initialized and committed on `main`. Create an empty repo named **`casescribe`** under your account at github.com/new (no README/license — keep it empty), then:
 ```bash
-git init && git add -A && git commit -m "CaseScribe initial"
-git branch -M main
-git remote add origin https://github.com/<your-username>/casescribe.git   # create the empty repo first
+export GH_USER=<your-github-username>        # e.g. pracharya2601
+git remote add origin https://github.com/$GH_USER/casescribe.git
 git push -u origin main
 ```
-The push to `main` triggers the workflow. Watch it under the repo's **Actions** tab; on success the image is at `ghcr.io/<your-username>/casescribe:latest`.
+The push to `main` triggers the workflow. Watch it under the repo's **Actions** tab; on success the image is at `ghcr.io/$GH_USER/casescribe:latest` (lowercased automatically).
 
 **b. Make AgentBox able to pull it.** GHCR packages are **private by default**. Either:
 - **Public (simplest):** GitHub → your `casescribe` package → Package settings → Change visibility → **Public**. AgentBox then needs no registry credentials.

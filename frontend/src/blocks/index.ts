@@ -7,3 +7,16 @@ export { Timecard, type TimecardProps } from "./Timecard";
 export { ScrubViewer, type ScrubViewerProps } from "./ScrubViewer";
 export { InputPanel, type InputPanelProps, type Scenario } from "./InputPanel";
 export { SignBar, type SignBarProps } from "./SignBar";
+export { AppShell, type AppShellProps } from "./AppShell";
+export {
+  SidebarNav,
+  type SidebarNavProps,
+  type NavScenario,
+  type NavHistoryItem,
+} from "./SidebarNav";
+export {
+  StageTimeline,
+  type StageTimelineProps,
+  type StageNode,
+} from "./StageTimeline";
+export { DetailDrawer, type DetailDrawerProps } from "./DetailDrawer";

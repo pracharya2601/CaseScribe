@@ -78,8 +78,35 @@ Each primitive: forwardRef, `className` merge (use a `cn()` helper = clsx + tail
 - **`ModelAttribution`** — list of `{step, model, latency_ms, tokens}` rows; the visible multi-model story.
 - **`Timecard`** — aggregate `Stat`s ("sessions · $ recovered · hours saved") — the "hired employee" framing.
 - **`ScrubViewer`** — `Tabs`: Raw → Model sees (`[PERSON_A]`) → Re-injected. The FERPA visual.
-- **`InputPanel`** — `Textarea` + 3 scenario quick-load buttons + `FileDrop` + Run `Button`.
-- **`SignBar`** — sign action + "✎ N edits captured" flywheel readout.
+- **`InputPanel`** — `Textarea` + 3 scenario quick-load buttons + `FileDrop` + Run `Button` (lives in the New-Session composer).
+- **`SignBar`** — sign action + "✎ N edits captured" flywheel readout (lives inside the Case Note drawer).
+- **`AppShell`** — the layout frame: persistent left `SidebarNav`, a top header strip, the main content column, and a right `DetailDrawer` slot. Collapsible nav; respects the import rule (composes `ui` only).
+- **`SidebarNav`** — brand + "New Session" + Demo scenarios + History, with a footer `Timecard` summary and a FERPA/PII badge.
+- **`StageTimeline`** — the centerpiece: a vertical timeline of the 5 pipeline stages (`scrub → classify → reporter → medicaid → casenote`). Each node shows icon, stage name, status (pending `Skeleton`/running `Spinner`/done check), the **engine/model used** (e.g. "local Presidio", "Nemotron Nano", "Qwen3-Next T=0", "Claude Sonnet 4.6"), and latency + tokens. The reporter node carries the **single rose alert dot** when triggered. A completed node is clickable → opens the drawer. Nodes light up sequentially as `stage` advances.
+- **`DetailDrawer`** — right-side drawer (Radix Dialog/Sheet) that slides in with the clicked stage's artifact: Scrub→`ScrubViewer`; Classify→classification fields; Reporter→flag detail (category, snippet, 36h timeline, draft SCAR / safety-plan, alert styling); Medicaid→code/units/reimbursement/justification; Case Note→SOAP/GIRP fields, editable + `SignBar`.
+
+## Layout v2 — the app shell (current direction)
+
+The screen is an **app shell**, not the old two-column split:
+
+```
+┌──────────┬───────────────────────────────────┬──────────┐
+│ Sidebar  │ Header: HeroBand timer · CostMeter │          │
+│ Nav      ├───────────────────────────────────┤ Detail   │
+│ • New    │ New-Session composer (InputPanel)  │ Drawer   │
+│ • Demos  │ ───────────────────────────────    │ (opens   │
+│ • Hist.  │ StageTimeline                      │  on node │
+│          │  ● Scrub      ✓ Presidio           │  click)  │
+│ ┌──────┐ │  ● Classify   ✓ Nemotron Nano      │          │
+│ │Time- │ │  ● Reporter ⚠ ✓ Qwen3-Next         │          │
+│ │card  │ │  ● Medicaid   ✓ Qwen3-Coder         │          │
+│ └──────┘ │  ● Case note  ⟳ Claude Sonnet 4.6  │          │
+└──────────┴───────────────────────────────────┴──────────┘
+```
+
+- **Timeline = live pipeline stages** (not the 3 artifacts): nodes reveal sequentially as the job polls, each labeling its model — this is the multi-model attribution story, made central.
+- **Detail drawer** holds the full artifact per stage; the Case Note drawer owns editing + Sign (flywheel capture).
+- **Theme stays clinical light** (slate-50 shell, white surfaces, emerald success, the lone rose alert on the reporter node). Two accents only still holds.
 
 ## Motion conventions (`src/theme/motion.ts`)
 

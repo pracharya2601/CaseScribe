@@ -33,14 +33,17 @@ export function ModelAttribution({ rows, className }: ModelAttributionProps) {
           {rows.map((r, i) => (
             <li
               key={`${r.step}-${i}`}
-              className="flex items-center justify-between gap-3 py-2.5"
+              className="flex max-w-full items-center justify-between gap-3 py-2.5"
             >
-              <div className="min-w-0">
-                <div className="text-xs font-medium uppercase tracking-wide text-ink-soft">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-medium uppercase tracking-wide text-ink-soft">
                   {r.step}
                 </div>
                 <Tooltip content={`${r.input_tokens} in · ${r.output_tokens} out tokens`}>
-                  <span className="cursor-default truncate font-mono text-sm text-ink">
+                  <span
+                    className="block max-w-full cursor-default truncate font-mono text-sm text-ink"
+                    title={r.model}
+                  >
                     {r.model}
                   </span>
                 </Tooltip>

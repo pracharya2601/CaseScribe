@@ -6,6 +6,10 @@ import {
   Inbox,
   WifiOff,
   RefreshCw,
+  Play,
+  RotateCcw,
+  ShieldCheck,
+  TriangleAlert,
 } from "lucide-react";
 import {
   Button,
@@ -47,8 +51,13 @@ import {
   ScrubViewer,
   InputPanel,
   SignBar,
+  AppShell,
+  SidebarNav,
+  StageTimeline,
+  DetailDrawer,
   type ArtifactStatus,
   type ModelUsage,
+  type StageNode,
 } from "../blocks";
 
 /* ----------------------------- fixtures ----------------------------- */
@@ -73,6 +82,277 @@ const SCENARIOS = [
   { label: "Mandatory report", text: RAW },
   { label: "Billable IEP", text: "Counselor: Let's review your IEP goals for reading fluency this quarter." },
 ];
+
+/* ---- app-shell / timeline fixtures ---- */
+
+const STAGE_DEFS: Required<Omit<StageNode, "status">>[] = [
+  { key: "scrub", label: "Scrub", model: "local Presidio", latencyMs: 12, tokens: 0, alert: false, summary: "8 PII spans masked → [PERSON_A], [DATE_A]" },
+  { key: "classify", label: "Classify", model: "Nemotron Nano", latencyMs: 410, tokens: 884, alert: false, summary: "Session type: individual counseling" },
+  { key: "reporter", label: "Reporter", model: "Qwen3-Next · T=0", latencyMs: 1180, tokens: 1150, alert: true, summary: "Suspected child abuse — CA, file within 36h" },
+  { key: "medicaid", label: "Medicaid", model: "Qwen3-Coder", latencyMs: 520, tokens: 856, alert: false, summary: "Billable · 90834 · $89.64" },
+  { key: "casenote", label: "Case note", model: "Claude Sonnet 4.6", latencyMs: 1640, tokens: 1400, alert: false, summary: "SOAP draft ready for signature" },
+];
+
+/** index = next stage to complete; stages before it are done, this one runs. */
+function buildStages(idx: number, alertOn: boolean): StageNode[] {
+  return STAGE_DEFS.map((s, i) => {
+    const status: ArtifactStatus =
+      i < idx ? "done" : i === idx ? "running" : "pending";
+    const alert = s.key === "reporter" ? alertOn : false;
+    return {
+      key: s.key,
+      label: s.label,
+      model: s.model,
+      status,
+      latencyMs: s.latencyMs,
+      tokens: s.tokens,
+      alert,
+      summary: s.summary,
+    };
+  });
+}
+
+const NAV_SCENARIOS = [
+  { key: "routine", label: "Routine session" },
+  { key: "report", label: "Mandatory report" },
+  { key: "iep", label: "Billable IEP" },
+];
+
+const NAV_HISTORY = [
+  { id: "h1", label: "Marcus T. · 90834", sub: "Today · $89.64", alert: true },
+  { id: "h2", label: "Priya K. · 90837", sub: "Today · $122.40" },
+  { id: "h3", label: "Devon R. · non-billable", sub: "Yesterday" },
+];
+
+/** Sample drawer body per stage — the artifact the node reveals. */
+function StageDrawerBody({ stageKey }: { stageKey: string }) {
+  switch (stageKey) {
+    case "scrub":
+      return <ScrubViewer raw={RAW} scrubbed={SCRUBBED} reinjected={REINJECTED} />;
+    case "classify":
+      return (
+        <div className="space-y-3 text-sm">
+          <Stat label="Session type" value="Individual counseling" />
+          <Stat label="Modality" value="In-person · 45 min" />
+          <Stat label="Confidence" value={<CountUp value={0.96} decimals={2} />} tone="brand" />
+        </div>
+      );
+    case "reporter":
+      return (
+        <Card tone="alert">
+          <CardHeader>
+            <CardTitle icon={<TriangleAlert />}>Mandatory report</CardTitle>
+            <Badge tone="alert" pill>child_abuse_neglect · 0.93</Badge>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p className="rounded-md bg-alert-soft p-2.5 font-mono text-[12px] text-alert-ink">
+              “…my mom’s boyfriend hit me again on Tuesday.”
+            </p>
+            <Stat label="Jurisdiction" value="California" />
+            <Stat label="File within" value={<CountUp value={36} suffix="h" />} tone="alert" />
+            <p className="text-ink-muted">
+              Both regex screen and LLM judge agreed. A draft SCAR filing and
+              safety plan are attached for review.
+            </p>
+          </CardContent>
+        </Card>
+      );
+    case "medicaid":
+      return (
+        <div className="space-y-3 text-sm">
+          <Row>
+            <Badge tone="success" pill>Billable</Badge>
+            <Badge tone="info" className="font-mono">90834</Badge>
+          </Row>
+          <Stat label="Description" value="Psychotherapy, 45 min" />
+          <Stat label="Units" value="1" />
+          <Stat label="Reimbursement" value={<CountUp value={89.64} decimals={2} prefix="$" />} tone="success" />
+          <p className="text-ink-muted">
+            Met time threshold and medical-necessity criteria for individual
+            psychotherapy.
+          </p>
+        </div>
+      );
+    case "casenote":
+      return (
+        <div className="space-y-2 text-sm">
+          <p><span className="font-medium text-ink">S:</span> Student reports improved sleep and reduced anxiety since last session.</p>
+          <p><span className="font-medium text-ink">O:</span> Affect bright, engaged; maintained eye contact.</p>
+          <p><span className="font-medium text-ink">A:</span> Progress toward coping-skills goal.</p>
+          <p><span className="font-medium text-ink">P:</span> Continue weekly individual sessions.</p>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+/** Standalone DetailDrawer with sample artifact content. */
+function StandaloneDrawerDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Row>
+        <Button variant="secondary" onClick={() => setOpen(true)}>
+          Open detail drawer
+        </Button>
+        <span className="text-sm text-ink-muted">
+          Opens the Reporter stage artifact (the alert-styled detail).
+        </span>
+      </Row>
+      <DetailDrawer
+        open={open}
+        onOpenChange={setOpen}
+        leading={<TriangleAlert className="text-alert" />}
+        title="Reporter"
+        sub="Qwen3-Next · T=0 · 1180ms"
+        footer={
+          <Button variant="destructive" className="w-full">
+            Review draft SCAR filing
+          </Button>
+        }
+      >
+        <StageDrawerBody stageKey="reporter" />
+      </DetailDrawer>
+    </>
+  );
+}
+
+/** A fully-wired, embedded app-shell preview — the Layout v2 centerpiece. */
+function AppShellDemo() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [idx, setIdx] = useState(5); // 5 = all done
+  const [alertOn, setAlertOn] = useState(true);
+  const [activeKey, setActiveKey] = useState<string | undefined>(undefined);
+
+  const stages = buildStages(idx, alertOn);
+  const activeStage = stages.find((s) => s.key === activeKey);
+
+  // Auto-advance once on mount so the sequential reveal is visible.
+  function runPipeline() {
+    setIdx(0);
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setIdx(i);
+      if (i >= STAGE_DEFS.length) clearInterval(id);
+    }, 650);
+  }
+
+  return (
+    <div className="space-y-3">
+      <Row>
+        <Button size="sm" variant="secondary" icon={<Play className="size-4" />} onClick={runPipeline}>
+          Run pipeline
+        </Button>
+        <Button size="sm" variant="ghost" icon={<RotateCcw className="size-4" />} onClick={() => { setIdx(5); setActiveKey(undefined); }}>
+          All done
+        </Button>
+        <Switch label="Reporter alert" checked={alertOn} onCheckedChange={setAlertOn} />
+        <Switch label="Collapse nav" checked={collapsed} onCheckedChange={setCollapsed} />
+      </Row>
+
+      <div className="overflow-hidden rounded-[var(--radius-card)] border border-border shadow-card">
+        <AppShell
+          className="h-[640px]"
+          sidebar={
+            <SidebarNav
+              collapsed={collapsed}
+              onToggleCollapsed={() => setCollapsed((c) => !c)}
+              onNewSession={runPipeline}
+              scenarios={NAV_SCENARIOS}
+              onScenario={() => runPipeline()}
+              history={NAV_HISTORY}
+              activeHistoryId="h1"
+              timecard={{ sessions: 128, recoveredUsd: 11473, hoursSaved: 64 }}
+            />
+          }
+          header={
+            <div className="flex items-center justify-between gap-4 px-6 py-3">
+              <div className="flex items-center gap-5">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">
+                    Drafted in
+                  </span>
+                  <CountUp value={47} decimals={1} suffix="s" className="text-lg font-bold text-ink" />
+                  <span className="tnum text-xs font-medium text-success-ink">≈ 115× faster</span>
+                </div>
+                <Separator orientation="vertical" className="h-6" />
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">
+                    Cost
+                  </span>
+                  <CountUp value={0.04} decimals={2} prefix="$" className="text-lg font-bold text-success-ink" />
+                  <span className="tnum text-xs text-ink-soft">vs $0.19 all-frontier</span>
+                </div>
+              </div>
+              <Badge tone="success" icon={<ShieldCheck />}>scrubbed locally</Badge>
+            </div>
+          }
+          drawer={
+            <DetailDrawer
+              open={!!activeKey}
+              onOpenChange={(o) => !o && setActiveKey(undefined)}
+              leading={
+                activeStage?.alert ? (
+                  <TriangleAlert className="text-alert" />
+                ) : (
+                  <Stethoscope className="text-success" />
+                )
+              }
+              title={activeStage?.label ?? "Stage"}
+              sub={activeStage?.model}
+              footer={
+                activeKey === "casenote" ? (
+                  <SignBar editCount={3} signed={false} onSign={() => {}} />
+                ) : undefined
+              }
+            >
+              {activeKey && <StageDrawerBody stageKey={activeKey} />}
+            </DetailDrawer>
+          }
+          rightRail={
+            <div className="p-4">
+              <StageTimeline
+                stages={stages}
+                activeKey={activeKey}
+                onNodeClick={(k) => setActiveKey(k)}
+              />
+            </div>
+          }
+        >
+          {/* center workspace: composer + an inline artifact detail panel */}
+          <div className="space-y-5">
+            <div className="max-w-none">
+              <InputPanel scenarios={SCENARIOS} />
+            </div>
+            <ArtifactCard
+              title="Case note"
+              icon={<Stethoscope />}
+              status="done"
+              tone="success"
+              editable
+              signer="Maria Reyes, LCSW"
+            >
+              <div className="space-y-2 text-sm">
+                <p><span className="font-medium text-ink">S:</span> Student reports improved sleep and steadier mood since the new study plan.</p>
+                <p><span className="font-medium text-ink">O:</span> Affect bright; engaged throughout the 45-minute session.</p>
+                <p><span className="font-medium text-ink">A:</span> Continued progress toward the coping-skills goal.</p>
+                <p><span className="font-medium text-ink">P:</span> Continue weekly individual counseling.</p>
+              </div>
+            </ArtifactCard>
+          </div>
+        </AppShell>
+      </div>
+      <p className="text-sm text-ink-muted">
+        Three-column frame: SidebarNav · center workspace (composer + inline
+        artifact panel) · the persistent <code className="font-mono text-ink-soft">rightRail</code>{" "}
+        (~320px) holding the live StageTimeline. Click any completed node to open
+        the detail drawer; the rail and main column scroll independently.
+      </p>
+    </div>
+  );
+}
 
 /* ----------------------------- layout helpers ----------------------------- */
 
@@ -492,6 +772,79 @@ export function Gallery() {
               <EmptyState />
               <ErrorState />
             </div>
+          </Section>
+
+          {/* ---------------- LAYOUT V2 — APP SHELL ---------------- */}
+          <Separator />
+
+          <Section
+            title="StageTimeline — pipeline states"
+            desc="pending dot · running spinner · emerald done check · the lone rose alert on the reporter node"
+          >
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-soft">
+                  Mid-run (Reporter running)
+                </p>
+                <StageTimeline stages={buildStages(2, false)} />
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-soft">
+                  All done · alert ON
+                </p>
+                <StageTimeline stages={buildStages(5, true)} activeKey="reporter" />
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-soft">
+                  All done · alert OFF
+                </p>
+                <StageTimeline stages={buildStages(5, false)} />
+              </div>
+            </div>
+          </Section>
+
+          <Section
+            title="Rail overflow stress test — 320px"
+            desc="longest real model IDs in a pinned 320px rail · nothing scrolls horizontally · labels truncate · chips wrap"
+          >
+            <div
+              data-testid="narrow-rail"
+              className="flex flex-col gap-4 overflow-x-hidden border-l border-border bg-surface/40 p-4"
+              style={{ width: 320 }}
+            >
+              <StageTimeline
+                stages={[
+                  { key: "scrub", label: "Scrub", model: "local-presidio-ner-en_core_web_lg", status: "done", latencyMs: 12, tokens: 0, summary: "8 PII spans masked → [PERSON_A], [DATE_A]" },
+                  { key: "classify", label: "Classify", model: "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", status: "done", latencyMs: 410, tokens: 884, summary: "Session type: individual counseling" },
+                  { key: "reporter", label: "Reporter", model: "meta-llama/Llama-3.3-70B-Instruct-Turbo", status: "done", latencyMs: 1180, tokens: 1150, alert: true, summary: "Suspected child abuse — CA, file within 36h" },
+                  { key: "medicaid", label: "Medicaid", model: "deepseek-ai/DeepSeek-V3-0324-Instruct-Reasoning", status: "running" },
+                  { key: "casenote", label: "Case note", model: "claude-sonnet-4-6-20260219-thinking-extended", status: "pending" },
+                ]}
+                activeKey="reporter"
+              />
+              <ModelAttribution
+                rows={[
+                  { step: "scrub", model: "local-presidio-ner-en_core_web_lg", latency_ms: 12, input_tokens: 0, output_tokens: 0 },
+                  { step: "classifier", model: "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", latency_ms: 410, input_tokens: 820, output_tokens: 64 },
+                  { step: "reporter", model: "meta-llama/Llama-3.3-70B-Instruct-Turbo", latency_ms: 1180, input_tokens: 910, output_tokens: 240 },
+                  { step: "casenote", model: "claude-sonnet-4-6-20260219-thinking-extended", latency_ms: 1640, input_tokens: 1020, output_tokens: 380 },
+                ]}
+              />
+            </div>
+          </Section>
+
+          <Section
+            title="DetailDrawer — right sheet"
+            desc="Radix Dialog as a 440px right slide-in · focus-trapped · ESC/overlay closes"
+          >
+            <StandaloneDrawerDemo />
+          </Section>
+
+          <Section
+            title="AppShell — the 3-column Layout v2 frame"
+            desc="sidebar (expand/collapse) · center workspace (composer + artifact panel) · persistent rightRail with the StageTimeline · DetailDrawer on node click"
+          >
+            <AppShellDemo />
           </Section>
 
           <footer className="pt-6 text-center text-sm text-ink-soft">

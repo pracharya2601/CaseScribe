@@ -51,21 +51,34 @@ The push to `main` triggers the workflow. Watch it under the repo's **Actions** 
 | **5. Review & Register** | Deployment path | **GMI CE Deployment + MaaS ON** (eligible for the Verified badge) |
 | | Region | **US West** (lowest latency at the venue) |
 
-After register, AgentBox pulls + builds the container on demand and gives you a public URL.
+After register, AgentBox pulls + builds the container on demand and gives you a public URL. **This is the agent API only — there is no UI at the URL** (root returns a small JSON status). The frontend runs separately; see §3b.
 
 ## 3. Post-deploy verification (against the public URL)
 
 ```bash
 BASE=https://<your-agentbox-url>
 curl -s $BASE/health                       # -> {"status":"ok"}
-curl -s $BASE/ | grep -o '<title>[^<]*</title>'   # serves the UI
+curl -s $BASE/                             # -> {"service":"casescribe-agent", ...} (API only)
 JOB=$(curl -s -X POST $BASE/run -H 'Content-Type: application/json' \
-      -d '{"dictation":"met w/ Jordan abt exam stress, CBT, 30 min"}' \
+      -d '{"text":"met w/ Jordan abt exam stress, CBT, 30 min"}' \
       | python3 -c "import sys,json;print(json.load(sys.stdin)['job_id'])")
 curl -s $BASE/jobs/$JOB                     # poll -> completed + Trinity
 ```
 
 Run all **three demo scenarios** end-to-end through the deployed instance and **warm the cache** (run each once) before stage time so the first live run isn't a cold start.
+
+## 3b. Run the frontend locally for the demo
+
+The UI is **not** bundled into the agent. Point a local Vite dev server at the deployed agent and demo from `localhost`:
+
+```bash
+cd frontend
+echo "VITE_API_BASE=$BASE" > .env.local   # the AgentBox public URL from above
+npm install
+npm run dev                                # open http://localhost:5173
+```
+
+CORS is open on the agent (`allow_origins=["*"]`), so the browser at `localhost:5173` can call `$BASE/run` and `$BASE/jobs/{id}` directly. If the venue WiFi dies, flip to mock data at runtime with `?mock=1` in the URL — no rebuild needed.
 
 ## 4. Marketplace listing fields (the `list-an-agent` flow)
 

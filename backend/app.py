@@ -5,7 +5,10 @@ Routes (per casescribe-platform contract):
   POST /run           -> 202 {"job_id": "<uuid>"}   (enqueue, return immediately)
   GET  /jobs/{job_id} -> job status object (pending|running|completed|failed)
 
-Serves the built React frontend (frontend/dist) at /, guarded for dev absence.
+Backend ONLY — it does not serve the frontend. The React UI is hosted
+separately (locally for the demo) and points at this agent's URL; CORS is open
+so a cross-origin frontend can call /run and /jobs/{id}.
+
 Listens on port 8080. In-memory job store, no database.
 
 Ownership: casescribe-backend.
@@ -14,13 +17,12 @@ Ownership: casescribe-backend.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from typing import Any, Dict
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from jobs import PIPELINE_SOURCE, JobStore, run_job
 
@@ -28,6 +30,15 @@ load_dotenv()  # local dev: pull GMI_MAAS_* from .env if present
 
 app = FastAPI(title="CaseScribe", version="0.1.0")
 store = JobStore()
+
+# Open CORS: the frontend is hosted elsewhere (local machine for the demo) and
+# calls this agent cross-origin. No cookies/auth, so "*" is safe here.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
@@ -70,22 +81,15 @@ async def meta() -> Dict[str, Any]:
     }
 
 
-# --------------------------------------------------------------------------- #
-# Static frontend mount — LAST, so it never shadows the API routes above.
-# Guarded: in dev the frontend may not be built yet.
-# --------------------------------------------------------------------------- #
-
-_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
-if _DIST.is_dir():
-    app.mount("/", StaticFiles(directory=str(_DIST), html=True), name="frontend")
-else:  # dev fallback so visiting / is informative rather than a hard 404
-    @app.get("/")
-    async def _no_frontend() -> Dict[str, str]:
-        return {
-            "status": "ok",
-            "frontend": "not built",
-            "hint": "build frontend/dist or use the API at /health, /run, /jobs/{id}",
-        }
+# Root is informational only — this container is the agent API, not a web host.
+# The frontend runs separately and points here via VITE_API_BASE.
+@app.get("/")
+async def root() -> Dict[str, str]:
+    return {
+        "status": "ok",
+        "service": "casescribe-agent",
+        "hint": "API only — use /health, POST /run, GET /jobs/{id}. Frontend is hosted separately.",
+    }
 
 
 if __name__ == "__main__":

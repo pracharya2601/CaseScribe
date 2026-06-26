@@ -1,16 +1,17 @@
-# Keep the build context small and force a clean in-container build.
-**/node_modules
-**/dist
+# Agent image = backend only. Keep the build context tiny.
+frontend
+scripts
 **/__pycache__
 **/*.pyc
 **/.venv
 **/venv
 .git
+.github
 .env
 .env.*
 !.env.example
 **/.DS_Store
-**/*.tsbuildinfo
 .claude
 SPEC.md
 CLAUDE.md
+DEPLOY.md

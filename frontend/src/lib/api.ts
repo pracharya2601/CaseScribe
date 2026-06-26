@@ -2,9 +2,10 @@
 //   POST /run        -> 202 { job_id }
 //   GET  /jobs/{id}  -> job status object
 //
-// All paths are SAME-ORIGIN RELATIVE ("/run", "/jobs/{id}", "/edits") so the
-// served UI talks to whatever host it was loaded from — no base-URL config
-// needed behind the AgentBox deploy URL.
+// The agent is deployed SEPARATELY from this UI (AgentBox backend-only). Set
+// VITE_API_BASE to the agent's URL (e.g. https://<agentbox-url>) so the locally
+// hosted demo UI talks to the deployed agent. If unset, paths stay same-origin
+// relative (works when a backend runs on the same host during local dev).
 //
 // Mock vs live is a RUNTIME choice (see ./mockMode): default LIVE (real
 // pipeline), flippable at the venue if the WiFi dies. Every call routes through
@@ -16,10 +17,18 @@ import type { JobStatus, Stage } from "./types";
 
 const VALID_STAGES: Stage[] = ["scrubbing", "classifying", "drafting", "done"];
 
+// Trailing slash stripped so `${API_BASE}/run` never doubles up.
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ?? "";
+
+/** Build a full URL to an agent endpoint, honoring VITE_API_BASE. */
+function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 /** Submit a transcript; resolves to the job id. */
 export async function runJob(text: string): Promise<string> {
   if (isMock()) return runMock(text);
-  const res = await fetch("/run", {
+  const res = await fetch(apiUrl("/run"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
@@ -32,7 +41,7 @@ export async function runJob(text: string): Promise<string> {
 /** Poll one job; normalizes the raw payload into a JobStatus. */
 export async function getJob(jobId: string): Promise<JobStatus> {
   if (isMock()) return getMock(jobId);
-  const res = await fetch(`/jobs/${jobId}`);
+  const res = await fetch(apiUrl(`/jobs/${jobId}`));
   if (!res.ok) throw new Error(`/jobs/${jobId} failed: ${res.status}`);
   const data = await res.json();
   const stage: Stage = VALID_STAGES.includes(data.stage) ? data.stage : "scrubbing";
@@ -62,7 +71,7 @@ export async function captureEdits(records: EditCaptureRecord[]): Promise<void> 
     console.info("[flywheel] edit-capture (mock):", records);
     return;
   }
-  await fetch("/edits", {
+  await fetch(apiUrl("/edits"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ records }),

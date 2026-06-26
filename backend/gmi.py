@@ -61,7 +61,18 @@ def base_url() -> str:
 
 
 def api_key() -> Optional[str]:
-    return os.environ.get("GMI_MAAS_API_KEY")
+    """Bearer key for MaaS.
+
+    AgentBox injects a LOCKED ``GMI_MAAS_API_KEY`` that is only authorized for
+    the models added in the "Add GMI Models" step. If that scoping blocks a
+    model, set ``GMI_API_KEY_OVERRIDE`` (a full-access key/token) in the env and
+    it wins — lets every configured model route without fighting the dashboard
+    model picker.
+    """
+    return (
+        os.environ.get("GMI_API_KEY_OVERRIDE")
+        or os.environ.get("GMI_MAAS_API_KEY")
+    )
 
 
 # Bounded networking so a reachable-but-slow endpoint (flaky venue WiFi, a bad

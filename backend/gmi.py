@@ -428,8 +428,11 @@ def complete(
     kwargs: dict[str, Any] = {
         "model": model,
         "messages": messages,
-        "temperature": temperature,
     }
+    # GMI's Vertex-backed Anthropic models reject `temperature` ("deprecated for
+    # this model" -> 400). Only send it where it's accepted.
+    if "claude" not in model.lower() and "anthropic" not in model.lower():
+        kwargs["temperature"] = temperature
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
     if want_json:

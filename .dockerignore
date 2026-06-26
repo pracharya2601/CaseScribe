@@ -1,0 +1,16 @@
+# Keep the build context small and force a clean in-container build.
+**/node_modules
+**/dist
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+.git
+.env
+.env.*
+!.env.example
+**/.DS_Store
+**/*.tsbuildinfo
+.claude
+SPEC.md
+CLAUDE.md

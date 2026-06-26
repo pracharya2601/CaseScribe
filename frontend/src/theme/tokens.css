@@ -1,0 +1,65 @@
+/* CaseScribe design tokens — the 2-accent clinical palette.
+   Everything is a CSS variable so a dark mode / district white-label is a
+   token swap, not a rewrite. Consumed by Tailwind v4 via @theme. */
+
+@theme {
+  /* ---- Neutrals (slate) ---- */
+  --color-app: #f8fafc; /* slate-50  — app background */
+  --color-surface: #ffffff; /* card / panel surface */
+  --color-surface-2: #f1f5f9; /* slate-100 — sunken / raw-input wells */
+  --color-border: #e2e8f0; /* slate-200 — hairlines */
+  --color-border-strong: #cbd5e1; /* slate-300 */
+  --color-ink: #0f172a; /* slate-900 — primary text */
+  --color-ink-muted: #64748b; /* slate-500 — secondary text */
+  --color-ink-soft: #94a3b8; /* slate-400 — tertiary / placeholders */
+
+  /* ---- Success accent (completion, billable, "all clear") ---- */
+  --color-success: #059669; /* emerald-600 */
+  --color-success-ink: #047857; /* emerald-700 — text on soft */
+  --color-success-soft: #ecfdf5; /* emerald-50 */
+  --color-success-border: #a7f3d0; /* emerald-200 */
+
+  /* ---- Alert accent (reporter trigger / non-billable) — use sparingly ---- */
+  --color-alert: #e11d48; /* rose-600 */
+  --color-alert-ink: #be123c; /* rose-700 */
+  --color-alert-soft: #fff1f2; /* rose-50 */
+  --color-alert-border: #fecdd3; /* rose-200 */
+
+  /* ---- Brand / interactive (single indigo — never semantic) ---- */
+  --color-brand: #4f46e5; /* indigo-600 */
+  --color-brand-ink: #4338ca; /* indigo-700 */
+  --color-brand-soft: #eef2ff; /* indigo-50 */
+  --color-brand-border: #c7d2fe; /* indigo-200 */
+
+  /* ---- Info (neutral metadata: latency, "47s", model chips) ---- */
+  --color-info: #0284c7; /* sky-600 */
+  --color-info-ink: #0369a1;
+  --color-info-soft: #f0f9ff;
+  --color-info-border: #bae6fd;
+
+  /* ---- Typography ---- */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+
+  /* ---- Radius scale ---- */
+  --radius-input: 0.5rem; /* rounded-lg  — inputs/buttons */
+  --radius-card: 1rem; /* rounded-2xl — cards */
+  --radius-pill: 9999px;
+
+  /* ---- Shadow scale ---- */
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06);
+  --shadow-card-hover: 0 4px 12px -2px rgb(15 23 42 / 0.10), 0 2px 6px -2px rgb(15 23 42 / 0.06);
+  --shadow-pop: 0 12px 32px -8px rgb(15 23 42 / 0.18);
+
+  /* ---- Motion shimmer keyframes (Skeleton) ---- */
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

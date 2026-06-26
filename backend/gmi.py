@@ -92,15 +92,17 @@ def max_retries() -> int:
     return DEFAULT_MAX_RETRIES
 
 
-# Verified default model IDs (casescribe-gmi skill, 2026-06-26). One model per
-# sub-agent; the tier spread is the on-stage cost story.
+# Default model IDs aligned to the live GMI AgentBox catalog (2026-06-26). One
+# model per sub-agent; the cheap->frontier spread is the on-stage cost story.
+# startup_validate() logs a warning for any id missing from GET /v1/models, so
+# the AgentBox container logs will flag a drifted id without crashing the run.
 _DEFAULT_MODELS: dict[str, str] = {
-    "classifier": "nvidia/NVIDIA-Nemotron-3-Nano-Omni",
-    "reporter": "Qwen/Qwen3-Next-80B-A3B-Instruct",
-    "medicaid": "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8",
-    "casenote": "anthropic/claude-sonnet-4.6",
+    "classifier": "deepseek-ai/DeepSeek-V4-Flash",      # cheap triage
+    "reporter": "zai-org/GLM-5.2-FP8",                  # mid, strong-instruct, T=0
+    "medicaid": "Qwen/Qwen3.6-Max-Preview",             # structured coding judgment
+    "casenote": "anthropic/claude-opus-4.8",            # frontier clinical draft
     # Tier-2: reporter check escalates here when a trigger fires.
-    "reporter_escalation": "anthropic/claude-sonnet-4.6",
+    "reporter_escalation": "anthropic/claude-opus-4.8",
 }
 
 # The "frontier" step whose rate defines the all-frontier counterfactual.
@@ -176,26 +178,28 @@ def reload_models() -> dict[str, str]:
 # Cost meter: representative prices ($/1M tokens), env-overridable             #
 # --------------------------------------------------------------------------- #
 #
-# IMPORTANT (logged assumption): GMI does not publish per-model token prices in
-# its docs — they live in the per-model console card. The values below are
-# REPRESENTATIVE ESTIMATES so the live cost meter is defensible, NOT official
-# quotes. Override any of them via the GMI_PRICES env var (JSON:
-#   {"anthropic/claude-sonnet-4.6": {"in": 3.0, "out": 15.0}, ...}).
+# Per-model token prices ($/1M tokens), taken from the GMI AgentBox console
+# model cards (2026-06-26) — these are the REAL published rates, so the live
+# cost meter is accurate. Override via the GMI_PRICES env var (JSON:
+#   {"anthropic/claude-opus-4.8": {"in": 5.0, "out": 25.0}, ...}).
 
 _DEFAULT_PRICES: dict[str, dict[str, float]] = {
-    # cheap/fast triage
-    "nvidia/NVIDIA-Nemotron-3-Nano-Omni": {"in": 0.10, "out": 0.40},
-    # mid, strong instruct
-    "Qwen/Qwen3-Next-80B-A3B-Instruct": {"in": 0.30, "out": 1.20},
-    # code-strong mid (large MoE)
-    "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8": {"in": 0.50, "out": 2.00},
-    # frontier (case note + reporter escalation)
-    "anthropic/claude-sonnet-4.6": {"in": 3.00, "out": 15.00},
+    # classifier — cheap/fast triage
+    "deepseek-ai/DeepSeek-V4-Flash": {"in": 0.098, "out": 0.196},
+    # reporter — mid, strong instruct (T=0)
+    "zai-org/GLM-5.2-FP8": {"in": 0.979, "out": 3.08},
+    # medicaid — structured coding judgment
+    "Qwen/Qwen3.6-Max-Preview": {"in": 1.30, "out": 7.80},
+    # casenote + reporter escalation — frontier clinical draft
+    "anthropic/claude-opus-4.8": {"in": 5.00, "out": 25.00},
+    # other catalog models (handy if GMI_MODELS is overridden in the wizard)
+    "openai/gpt-5.5": {"in": 5.00, "out": 30.00},
+    "google/gemini-3.5-flash": {"in": 1.50, "out": 9.00},
 }
 
 # Fallback rate used when a model has no entry at all (priced as frontier so we
 # never under-report actual spend).
-_FALLBACK_PRICE = {"in": 3.00, "out": 15.00}
+_FALLBACK_PRICE = {"in": 5.00, "out": 25.00}
 
 
 def _build_prices() -> dict[str, dict[str, float]]:

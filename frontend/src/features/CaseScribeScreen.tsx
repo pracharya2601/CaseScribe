@@ -92,10 +92,10 @@ const CATEGORY_LABEL: Record<string, string> = {
  */
 const TIMELINE: Array<{ key: string; label: string; model: string; step: string }> = [
   { key: "scrub", label: "Privacy scrub", model: "local Presidio", step: "scrub" },
-  { key: "classify", label: "Classify session", model: "Nemotron Nano", step: "classifier" },
-  { key: "reporter", label: "Mandated-report check", model: "Qwen3-Next · T=0", step: "reporter" },
-  { key: "medicaid", label: "Medicaid coding", model: "Qwen3-Coder", step: "medicaid" },
-  { key: "casenote", label: "Case note draft", model: "Claude Sonnet 4.6", step: "casenote" },
+  { key: "classify", label: "Classify session", model: "DeepSeek-V4-Flash", step: "classifier" },
+  { key: "reporter", label: "Mandated-report check", model: "GLM-5.2 · T=0", step: "reporter" },
+  { key: "medicaid", label: "Medicaid coding", model: "Qwen3.6 Max", step: "medicaid" },
+  { key: "casenote", label: "Case note draft", model: "Claude Opus 4.8", step: "casenote" },
 ];
 
 /** Mock history — past sessions; rose alert on the neglect & SI ones. */
@@ -413,7 +413,7 @@ export function CaseScribeScreen() {
       const finalText = ids.map((id) => edits[id] ?? "").join("\n");
       records.push({
         artifact_type: "case_note",
-        model_used: modelByStep["casenote"]?.model ?? "anthropic/claude-sonnet-4.6",
+        model_used: modelByStep["casenote"]?.model ?? "anthropic/claude-opus-4.8",
         // Persist tokenized only — re-scrub originals back out before capture.
         draft: tokenMap ? scrubString(draftText, tokenMap) : draftText,
         final: tokenMap ? scrubString(finalText, tokenMap) : finalText,

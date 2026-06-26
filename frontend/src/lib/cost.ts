@@ -8,14 +8,16 @@ import type { ModelUsage } from "./types";
 type Price = { in: number; out: number }; // $ per 1M tokens
 
 const PRICES: Record<string, Price> = {
-  "nvidia/NVIDIA-Nemotron-3-Nano-Omni": { in: 0.1, out: 0.4 },
-  "Qwen/Qwen3-Next-80B-A3B-Instruct": { in: 0.3, out: 1.2 },
-  "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8": { in: 0.5, out: 2.0 },
-  "anthropic/claude-sonnet-4.6": { in: 3.0, out: 15.0 },
+  "deepseek-ai/DeepSeek-V4-Flash": { in: 0.098, out: 0.196 },
+  "zai-org/GLM-5.2-FP8": { in: 0.979, out: 3.08 },
+  "Qwen/Qwen3.6-Max-Preview": { in: 1.3, out: 7.8 },
+  "anthropic/claude-opus-4.8": { in: 5.0, out: 25.0 },
+  "openai/gpt-5.5": { in: 5.0, out: 30.0 },
+  "google/gemini-3.5-flash": { in: 1.5, out: 9.0 },
 };
 
-const FALLBACK_PRICE: Price = { in: 3.0, out: 15.0 };
-const FRONTIER_MODEL = "anthropic/claude-sonnet-4.6";
+const FALLBACK_PRICE: Price = { in: 5.0, out: 25.0 };
+const FRONTIER_MODEL = "anthropic/claude-opus-4.8";
 
 function priceFor(modelId: string): Price {
   return PRICES[modelId] ?? FALLBACK_PRICE;

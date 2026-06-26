@@ -155,11 +155,11 @@ const NEGLECT: MockScenario = {
   },
   models: [
     { step: "scrub", model: "presidio-analyzer (local)", latency_ms: 18, input_tokens: 0, output_tokens: 0 },
-    { step: "classifier", model: "nvidia/NVIDIA-Nemotron-3-Nano-Omni", latency_ms: 372, input_tokens: 3050, output_tokens: 140 },
-    { step: "reporter", model: "Qwen/Qwen3-Next-80B-A3B-Instruct", latency_ms: 1140, input_tokens: 3420, output_tokens: 520 },
-    { step: "reporter_escalation", model: "anthropic/claude-sonnet-4.6", latency_ms: 1880, input_tokens: 1620, output_tokens: 340 },
-    { step: "medicaid", model: "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", latency_ms: 642, input_tokens: 2810, output_tokens: 300 },
-    { step: "casenote", model: "anthropic/claude-sonnet-4.6", latency_ms: 1980, input_tokens: 2040, output_tokens: 700 },
+    { step: "classifier", model: "deepseek-ai/DeepSeek-V4-Flash", latency_ms: 372, input_tokens: 3050, output_tokens: 140 },
+    { step: "reporter", model: "zai-org/GLM-5.2-FP8", latency_ms: 1140, input_tokens: 3420, output_tokens: 520 },
+    { step: "reporter_escalation", model: "anthropic/claude-opus-4.8", latency_ms: 1880, input_tokens: 1620, output_tokens: 340 },
+    { step: "medicaid", model: "Qwen/Qwen3.6-Max-Preview", latency_ms: 642, input_tokens: 2810, output_tokens: 300 },
+    { step: "casenote", model: "anthropic/claude-opus-4.8", latency_ms: 1980, input_tokens: 2040, output_tokens: 700 },
   ],
 };
 
@@ -245,10 +245,10 @@ const IEP_CHECKIN: MockScenario = {
   },
   models: [
     { step: "scrub", model: "presidio-analyzer (local)", latency_ms: 15, input_tokens: 0, output_tokens: 0 },
-    { step: "classifier", model: "nvidia/NVIDIA-Nemotron-3-Nano-Omni", latency_ms: 348, input_tokens: 2780, output_tokens: 90 },
-    { step: "reporter", model: "Qwen/Qwen3-Next-80B-A3B-Instruct", latency_ms: 520, input_tokens: 2810, output_tokens: 70 },
-    { step: "medicaid", model: "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", latency_ms: 604, input_tokens: 2640, output_tokens: 280 },
-    { step: "casenote", model: "anthropic/claude-sonnet-4.6", latency_ms: 1720, input_tokens: 1860, output_tokens: 540 },
+    { step: "classifier", model: "deepseek-ai/DeepSeek-V4-Flash", latency_ms: 348, input_tokens: 2780, output_tokens: 90 },
+    { step: "reporter", model: "zai-org/GLM-5.2-FP8", latency_ms: 520, input_tokens: 2810, output_tokens: 70 },
+    { step: "medicaid", model: "Qwen/Qwen3.6-Max-Preview", latency_ms: 604, input_tokens: 2640, output_tokens: 280 },
+    { step: "casenote", model: "anthropic/claude-opus-4.8", latency_ms: 1720, input_tokens: 1860, output_tokens: 540 },
   ],
 };
 
@@ -357,11 +357,11 @@ const SI_CRISIS: MockScenario = {
   },
   models: [
     { step: "scrub", model: "presidio-analyzer (local)", latency_ms: 21, input_tokens: 0, output_tokens: 0 },
-    { step: "classifier", model: "nvidia/NVIDIA-Nemotron-3-Nano-Omni", latency_ms: 366, input_tokens: 3180, output_tokens: 150 },
-    { step: "reporter", model: "Qwen/Qwen3-Next-80B-A3B-Instruct", latency_ms: 1080, input_tokens: 3520, output_tokens: 480 },
-    { step: "reporter_escalation", model: "anthropic/claude-sonnet-4.6", latency_ms: 1760, input_tokens: 1700, output_tokens: 360 },
-    { step: "medicaid", model: "Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", latency_ms: 540, input_tokens: 2720, output_tokens: 110 },
-    { step: "casenote", model: "anthropic/claude-sonnet-4.6", latency_ms: 2040, input_tokens: 2120, output_tokens: 720 },
+    { step: "classifier", model: "deepseek-ai/DeepSeek-V4-Flash", latency_ms: 366, input_tokens: 3180, output_tokens: 150 },
+    { step: "reporter", model: "zai-org/GLM-5.2-FP8", latency_ms: 1080, input_tokens: 3520, output_tokens: 480 },
+    { step: "reporter_escalation", model: "anthropic/claude-opus-4.8", latency_ms: 1760, input_tokens: 1700, output_tokens: 360 },
+    { step: "medicaid", model: "Qwen/Qwen3.6-Max-Preview", latency_ms: 540, input_tokens: 2720, output_tokens: 110 },
+    { step: "casenote", model: "anthropic/claude-opus-4.8", latency_ms: 2040, input_tokens: 2120, output_tokens: 720 },
   ],
 };
 
